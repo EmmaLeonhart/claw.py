@@ -1,21 +1,44 @@
 # claw.py
 
-IMPORTANT
-Do not enter planning-only modes. All thinking must produce files and commits.
-if the scope is not immediately clear make the directory /planning and create many .md files there explaining the planning process instead of using your own planning mode
-please replace the PLACEHOLDER DESCRIPTION section of readme.md with a proper project summary as soon as the purpose of the repo is known. 
-## Project Context
-This is a new, empty repository created on -2026-02-12 - at 07:33 PM using the `new-repo.bat` bootstrapping tool.
-The intent is to use Claude Code to build and populate this project from scratch.
-
-## Workflow Guidelines
-- **Commit early and often.** Every meaningful change should be committed with a clear, descriptive summary that explains *why* the change was made, not just what changed.
-- **Keep this claude.md up to date.** As the project takes shape, update this file with architectural decisions, conventions, dependencies, and anything Claude needs to know to work effectively in this repo. It is not useful to keep the boostrapping project context info in claude.md once a project is up and running.
-- **Do not enter planning mode, please clearly edit the repo with every single architectural decision and even just thoughts you have. Commit them frequently, because commits can be easily undone**
-- **Please regularly update the human aimed readme.md to provide more context for a human user**
-
 ## Project Description
-_TODO: Describe what this project is about._
+`claw.py` is a small self-contained Python utility for creating and managing `.claw` files — the OpenClaw Context Archive format. A `.claw` file is a standardized zip archive that stores agent session context for portability and continuation.
 
 ## Architecture and Conventions
-_TODO: Document key decisions, file structure, and patterns as they emerge._
+
+### Core design decisions
+- **Just a zip file.** `.claw` is a zip with a custom extension. Nothing proprietary.
+- **Self-contained.** Every `.claw` archive includes a copy of `claw.py` itself, so the archive is portable and self-describing without external dependencies.
+- **Metadata is always regenerated.** `manifest.json` and `README.md` are freshly generated on every export — existing ones in the source directory are ignored (not nested ones in context/).
+- **Standard library only.** No pip dependencies. Works on any Python 3.6+.
+- **Declarative, not executable.** The archive contains data and instructions, not runnable code. The runtime decides behavior.
+
+### File structure
+```
+claw.py           ← The utility script (single file, ~200 lines)
+README.md         ← Human-facing docs
+CLAUDE.md         ← This file
+```
+
+### .claw archive internal structure
+```
+archive.claw
+├── manifest.json    ← Auto-generated metadata
+├── README.md        ← Auto-generated human explanation
+├── claw.py          ← Copy of the builder script
+└── context/         ← Agent context files
+```
+
+### Three-layer separation (from architectural discussion)
+1. **Database layer** — Authoritative graph/data. Long-term. NOT in the .claw file.
+2. **Agent context layer** — Cognitive working state. Semi-persistent. THIS is what .claw stores.
+3. **Container layer** — Stateless execution environment (Ubuntu/Docker). Reproducible.
+
+### CLI commands
+- `python claw.py export <dir> [output.claw]` — Package directory into archive
+- `python claw.py import <file.claw> [target_dir]` — Extract archive
+- `python claw.py info <file.claw>` — Inspect without extracting
+
+## Workflow Guidelines
+- **Commit early and often.** Every meaningful change should be committed with a clear, descriptive summary.
+- **Keep this CLAUDE.md up to date.** Document decisions as they happen.
+- **Use `python` not `python3`** on this Windows system.
