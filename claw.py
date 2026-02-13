@@ -27,6 +27,51 @@ from datetime import datetime, timezone
 FORMAT_NAME = "openclaw-context"
 FORMAT_VERSION = "0.1"
 
+GENERATED_SKILL = """\
+# OpenClaw Context Archive Skill
+
+You are working with an OpenClaw Context Archive (.claw file).
+
+## What this is
+
+This directory was extracted from a .claw archive. It contains agent session
+context — conversation traces, scratch notes, working memory, and other
+cognitive state from a previous session. This is NOT a database. It is a
+continuation artifact meant to help you resume work.
+
+## How to use this context
+
+1. Read manifest.json to understand what files are present.
+2. Look through context/ for any conversation history, scratch notes,
+   tool logs, or working state from the previous session.
+3. Use this context to orient yourself and continue the work that was
+   in progress.
+
+## How to export your context when done
+
+When you are asked to export or save your context, run:
+
+```
+python claw.py export <this_directory> <output_name>.claw
+```
+
+This will:
+- Regenerate manifest.json with current metadata
+- Regenerate README.md
+- Bundle everything in context/ into a portable .claw archive
+- Include a copy of claw.py in the archive for portability
+
+Then move the resulting .claw file to a mounted drive or shared location
+so your human operator can retrieve it.
+
+## Important
+
+- Do NOT put database dumps or credentials in context/.
+- This archive is for cognitive continuity, not authoritative data.
+- Re-importing does not guarantee identical future outputs.
+- The .claw format is just a zip file with standardized structure.
+"""
+
 GENERATED_README = """\
 # OpenClaw Context Archive
 
@@ -41,6 +86,7 @@ This archive contains an OpenClaw agent context snapshot.
 
 - `manifest.json` — Machine-readable metadata about this archive.
 - `README.md` — This file.
+- `SKILL.md` — Instructions for the AI agent on how to use and re-export this context.
 - `claw.py` — The utility used to generate this archive. Run it to re-export.
 - `context/` — Agent working context (conversation traces, scratch, etc.)
 
@@ -117,7 +163,7 @@ def cmd_export(args):
             os.makedirs(os.path.join(archive_root, "context"))
             for item in os.listdir(source_dir):
                 # Skip root-level generated files — we regenerate them
-                if item in ("manifest.json", "README.md", "claw.py"):
+                if item in ("manifest.json", "README.md", "claw.py", "SKILL.md"):
                     continue
                 src = os.path.join(source_dir, item)
                 dst = os.path.join(archive_root, "context", item)
@@ -134,6 +180,10 @@ def cmd_export(args):
         # Generate fresh README
         with open(os.path.join(archive_root, "README.md"), "w", encoding="utf-8") as f:
             f.write(GENERATED_README)
+
+        # Generate skill file (agent instructions)
+        with open(os.path.join(archive_root, "SKILL.md"), "w", encoding="utf-8") as f:
+            f.write(GENERATED_SKILL)
 
         # Copy this script into the archive (self-inclusion for portability)
         this_script = os.path.abspath(__file__)
